@@ -1,0 +1,14 @@
+# Velocity and pose controller.
+# - Current pose and velocity are provided by the Navigator or the Dynamics Node
+# - The setpoint is provided by the Coordinator Node. By default, degrees X, Y, Z and Yaw are velocities while Roll and Pitch are Positions
+# - The output is sent to the actuators that can be thrusters or fins 
+ 
+low_level_controller/vehicle_name: "girona500"
+low_level_controller/n_actuators: 5
+
+# To linearize the actuators output a n-degree polynomi is provided. e.g.: [1, 2, 4, 0.5] --> f(x) = 1 + 2x + 4x^2 + 0.5x^3
+low_level_controller/actuators_polynomial_linearization: [0.0, 1.0] 
+
+#Dof x actuators
+low_level_controller/actuator_control_matrix: [-1.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.0, 0.0, -1.0, 1.0, 0.0, 0.0, 0.0]
+

@@ -1,0 +1,18 @@
+# Velocity controller.
+# - Current velocity is provided by the Navigator or the Dynamics Node
+# - By default, degrees X and Y are velocities while Z and YAW are Positions
+# - The output is sent to the thrusters allocator 
+ 
+#Per DoF [X, Y, Z, Roll, Pitch, Yaw]
+velocity_controller/force_max: [2.0, 1.0, 2.0, 0.0, 0.0, 2.0]
+
+#Velocity PID per DoF
+velocity_controller/pid_velocity_sat: [1.0, 0.6, 0.6, 0.0, 0.0, 0.0]
+velocity_controller/pid_velocity_feed_forward_force: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+#velocity_controller/pid_velocity_kp: [4.5, 3.5, 2.5, 0.0, 0.0, 4.0]
+#velocity_controller/pid_velocity_ki: [0.5, 0.5, 0.5, 0.0, 0.0, 0.0]
+#velocity_controller/pid_velocity_kd: [2.5, 0.0, 0.5, 0.0, 0.0, 0.0]
+velocity_controller/pid_velocity_kp: [2.5, 2.5, 2.5, 0.0, 0.0, 1.0]
+velocity_controller/pid_velocity_ki: [0.5, 0.5, 0.5, 0.0, 0.0, 0.0]
+velocity_controller/pid_velocity_kd: [1.5, 0.0, 0.5, 0.0, 0.0, 0.0]
+

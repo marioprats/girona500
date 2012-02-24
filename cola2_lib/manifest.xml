@@ -1,0 +1,18 @@
+<package>
+  <description brief="cola2_lib">
+
+     cola2_lib
+
+  </description>
+  <author>Enric Galceran</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/cola2_lib</url>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="" />
+  </export>
+
+</package>
+
+

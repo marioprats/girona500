@@ -1,0 +1,57 @@
+# ODIN (with Garbi thrusters) dynamics model
+# WARNING!!!
+# The thrusters allocation matrix "b" is defined in the code. It can not be changed using parameters.
+
+vehicle_name: odin
+dynamics/odin/period: 0.01
+dynamics/odin/mass: 98.0
+dynamics/odin/gravity_center: [0.0, 0.0, 0.05]
+dynamics/odin/g: 9.81
+dynamics/odin/radius: 0.286
+
+dynamics/odin/ctf: 0.00006835
+dynamics/odin/ctb: 0.00006835
+dynamics/odin/thrusters_tau: 0.2 
+dynamics/odin/dzv: 0.05
+dynamics/odin/dv: 0.35
+dynamics/odin/dh: 0.4
+dynamics/odin/density: 1000.0
+
+dynamics/odin/tensor: [8.0, 0.0, 0.0, 0.0, 8.0, 0.0, 0.0, 0.0, 8.0]
+dynamics/odin/damping: [.0, .0, .0, -130.0, -130.0, -130.0]
+dynamics/odin/quadratic_damping: [-148.0, -148.0, -148.0, -180.0, -180.0, -180.0]
+
+
+#Meters and Rads [X, Y, Z, Roll, Pitch, Yaw]
+dynamics/odin/initial_pose: [3.0, 1.1, 0.0, 0, 0, 3.14] #[3.0, 1.1, 2.8, 0, 0, 3.14]
+dynamics/odin/initial_velocity: [0, 0, 0, 0, 0, 0]
+
+dynamics/odin/topic_name: "/dataNavigator"
+dynamics/odin/frame_id: "garbi_base_link"
+
+
+#WATER CURRENTs SIMULATION
+dynamics/current_mean: [0.05, 0, 0]
+dynamics/current_sigma: [0.002, 0.001, 0.001]
+dynamics/current_min: [0.0, 0.0, 0.0]
+dynamics/current_max: [0.0, 0.0, 0.0]
+
+# Sensors information
+# Transformation wrt vehicle frame: [x, y, z, roll, pitch, yaw] (in meters and degrees!!!)
+valeport_sound_velocity/tf: [0.0, 0.0, 0.2, 0.0, 0.0, 0.0]
+tritech_igc_gyro/tf: [0.0, 0.0, 0.0, 0.0, 0.0, 180.0]
+teledyne_explorer_dvl/tf: [0.0, 0.0, 0.0, 0.0, 0.0, 225.0] 
+
+# Sensors publication periods
+valeport_sound_velocity/period: 0.2
+tritech_igc_gyro/period: 0.1
+teledyne_explorer_dvl/period: 0.3
+uwsim/period: 0.1
+gps/period: 1.0
+
+# Sensors covariances
+tritech_igc_gyro/orientation_covariance: [0.002, 0.002, 0.002]
+valeport_sound_velocity/pressure_covariance: 0.02
+teledyne_explorer_dvl/velocity_covariance: [0.0015, 0.0015, 0.0015] #wrt bottom, wrt water probably bigger!
+gps/position_covariance: [0.00005, 0.00005] #Not computed!!!
+
