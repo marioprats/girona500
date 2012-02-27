@@ -18,6 +18,7 @@
   <depend package="tf"/>
   <depend package="tf_conversions"/>
   <depend package="cola2_lib"/>
+  <depend package="control_g500"/>
   <depend package="kdl"/>
 </package>
 
