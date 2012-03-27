@@ -18,6 +18,7 @@
 #include "sensor_msgs/Joy.h"
 #include <boost/thread.hpp>
 #include "auv_msgs/NavSts.h"
+#include "sensor_msgs/JointState.h"
 #include <math.h> 
 #define _USE_MATH_DEFINES
 
@@ -34,14 +35,26 @@ struct JoyConfig {
 	double min_yaw_v;
 	double max_yaw_v;
 	double inc_yaw;
+  //joints arm
+        double min_arm_v;
+	double max_arm_v;
+	double inc_arm;
+	double min_hand_v;
+	double max_hand_v;
+	double inc_hand;
+	double min_support_v;
+	double max_support_v;
+	double inc_support;
 };
 
 
 const int _NUMBER_OF_SETPOINTS_ = 6;
+const int _NUMBER_OF_JOINTS_ = 3;
 JoyConfig _config;
 
 std::vector< int > _pressed_keys ;
 std::vector< float > _setpoints ;
+std::vector< float > _setjoints ;
 
 boost::mutex _setpoints_mutex;
 boost::shared_ptr< boost::thread > _reading_thread ;
@@ -137,6 +150,7 @@ main(int argc, char **argv)
 	ROS_INFO("Configuration Loaded correctly") ;
 	_pressed_keys.push_back( 1 ) ;
 	_setpoints.resize( _NUMBER_OF_SETPOINTS_ ) ;
+	_setjoints.resize( _NUMBER_OF_JOINTS_ ) ;
 
 	//Millor Així o no val la pena tenir dos Threads.
 	_reading_thread = boost::shared_ptr<boost::thread>(new boost::thread(boost::bind(&readKeyboardHits)));
@@ -186,6 +200,19 @@ getConfig(){
 	if(!ros::param::getCached("joy/min_yaw_v", _config.min_yaw_v)) {ROS_FATAL("Invalid parameters for joy/min_yaw_v in param server!"); ros::shutdown();}
 	if(!ros::param::getCached("joy/max_yaw_v", _config.max_yaw_v)) {ROS_FATAL("Invalid parameters for joy/max_yaw_v in param server!"); ros::shutdown();}
 	if(!ros::param::getCached("joy/yaw_inc", _config.inc_yaw)) {ROS_FATAL("Invalid parameters for joy/yaw_inc in param server!"); ros::shutdown();}
+
+	if(!ros::param::getCached("joint/min_arm_v", _config.min_arm_v)) {ROS_FATAL("Invalid parameters for joint/min_arm_v in param server!"); ros::shutdown();}
+	if(!ros::param::getCached("joint/max_arm_v", _config.max_arm_v)) {ROS_FATAL("Invalid parameters for joint/max_arm_v in param server!"); ros::shutdown();}
+	if(!ros::param::getCached("joint/arm_inc", _config.inc_arm)) {ROS_FATAL("Invalid parameters for joint/arm_inc in param server!"); ros::shutdown();}
+	if(!ros::param::getCached("joint/min_hand_v", _config.min_hand_v)) {ROS_FATAL("Invalid parameters for joint/min_hand_v in param server!"); ros::shutdown();}
+	if(!ros::param::getCached("joint/max_hand_v", _config.max_hand_v)) {ROS_FATAL("Invalid parameters for joint/max_hand_v in param server!"); ros::shutdown();}
+	if(!ros::param::getCached("joint/hand_inc", _config.inc_hand)) {ROS_FATAL("Invalid parameters for joint/hand_inc in param server!"); ros::shutdown();}
+	if(!ros::param::getCached("joint/min_support_v", _config.min_support_v)) {ROS_FATAL("Invalid parameters for joint/min_support_v in param server!"); ros::shutdown();}
+	if(!ros::param::getCached("joint/max_support_v", _config.max_support_v)) {ROS_FATAL("Invalid parameters for joint/max_support_v in param server!"); ros::shutdown();}
+	if(!ros::param::getCached("joint/support_inc", _config.inc_support)) {ROS_FATAL("Invalid parameters for joint/support_inc in param server!"); ros::shutdown();}
+
+
+	
 }
 
 
@@ -220,6 +247,10 @@ readKeyboardHits( ) {
 //		const size_t Pitch = 4 ;
 		const size_t YAW = 5 ;
 
+		const size_t ARM = 0 ;
+		const size_t HAND = 1 ;
+		const size_t SUPPORT = 2 ; 
+
 		//Forward, backward, turn left and turn right
 		const int KEY_W = 87 ;
 		const int KEY_w = 119 ;
@@ -236,18 +267,31 @@ readKeyboardHits( ) {
 		const int KEY_RIGHT = 67 ;
 		const int KEY_DOWN = 66 ;
 
-		//Pitch
-//		const int KEY_O = 79 ;
-//		const int KEY_o = 111 ;
-//		const int KEY_L = 76 ;
-//		const int KEY_l = 108 ;
+		//Join 0 ARM
+		// possitive increment
+		const int KEY_O = 79 ;
+		const int KEY_o = 111 ;
+		// negative increment
+		const int KEY_L = 76 ;
+		const int KEY_l = 108 ;
 
-		//Roll
-//		const int KEY_J = 74 ;
-//		const int KEY_j = 106 ;
-//		const int KEY_K = 75 ;
-//		const int KEY_k = 107 ;
-
+		//Join 1 HAND
+		// possitive increment
+		const int KEY_I = 73 ;
+		const int KEY_i = 105 ;
+		// negative increment
+		const int KEY_K = 75 ;
+		const int KEY_k = 107 ;
+		
+		//Join 2 SUPPORT
+		// possitive increment
+		const int KEY_U = 85 ;
+		const int KEY_u = 117 ;
+		// negative increment
+		const int KEY_J = 74 ;
+		const int KEY_j = 106 ;
+		
+		
 		//Esc and Space control actions
 		const int KEY_ESC = 27 ;
 		const int KEY_OBRACKET = 91 ;
@@ -292,6 +336,24 @@ readKeyboardHits( ) {
 		else if ( key == KEY_A || key == KEY_a ) {
 			_setpoints[YAW] -= _config.inc_yaw;
 		}
+		else if ( key == KEY_O || key == KEY_o ) {
+		        _setpoints[ARM] += _config.inc_arm;
+		}
+		else if ( key == KEY_L || key == KEY_l ) {
+		        _setpoints[ARM] -= _config.inc_arm;
+		}
+		else if ( key == KEY_I || key == KEY_i ) {
+		        _setpoints[HAND] += _config.inc_hand;
+		}
+		else if ( key == KEY_K || key == KEY_k ) {
+		        _setpoints[HAND] -= _config.inc_hand;
+		}
+		else if ( key == KEY_U || key == KEY_u ) {
+		        _setpoints[SUPPORT] += _config.inc_support;
+		}
+		else if ( key == KEY_J || key == KEY_j ) {
+		        _setpoints[SUPPORT] -= _config.inc_support;
+		}
 		else if ( key == KEY_SPACE ) {
 			//std::fill( _setpoints.begin(), _setpoints.end(), 0.0 );
 			_setpoints[X] = 0.0;
@@ -314,7 +376,21 @@ readKeyboardHits( ) {
 		else if(_setpoints[Z] < _config.min_z_v) _setpoints[Z] = _config.min_z_v;
 
 		if(_setpoints[YAW] > _config.max_yaw_v) _setpoints[YAW] = _config.max_yaw_v;
-		else if(_setpoints[YAW] < _config.min_yaw_v) _setpoints[YAW] = _config.min_yaw_v;				
+		else if(_setpoints[YAW] < _config.min_yaw_v) _setpoints[YAW] = _config.min_yaw_v;
+
+		//Joint Saturate
+
+		if(_setjoints[ARM] > _config.max_arm_v) _setjoints[ARM] = _config.max_arm_v;
+		else if(_setjoints[ARM] < _config.min_arm_v) _setjoints[ARM] = _config.min_arm_v;
+		 
+		if(_setjoints[HAND] > _config.max_hand_v) _setjoints[HAND] = _config.max_hand_v;
+		else if(_setjoints[HAND] < _config.min_hand_v) _setjoints[HAND] = _config.min_hand_v;
+				
+		if(_setjoints[SUPPORT] > _config.max_support_v) _setjoints[SUPPORT] = _config.max_support_v;
+		else if(_setjoints[SUPPORT] < _config.min_support_v) _setjoints[SUPPORT] = _config.min_support_v;
+
+
+				
 	}
 }
 
