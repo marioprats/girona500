@@ -24,3 +24,4 @@ girona500/perception_g500/src/navigation_g500
 girona500/perception_g500/src/navigation_g500/* 
 *.bak
 bags/sensors_nav_quiet/
+*_*
