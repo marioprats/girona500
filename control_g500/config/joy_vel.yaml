@@ -13,10 +13,10 @@ joy/yaw_inc: 0.2
 
 joint/min_arm_v: -3.14
 joint/max_arm_v: 3.14
-joint/inc_arm : 0.2
+joint/arm_inc : 0.2
 joint/min_hand_v : -3.14
 joint/max_hand_v : 3.14
-joint/inc_hand : 0.2
+joint/hand_inc : 0.2
 joint/min_support_v : -3.14
 joint/max_support_v : 3.14
-joint/inc_support : 0.2
+joint/support_inc : 0.2

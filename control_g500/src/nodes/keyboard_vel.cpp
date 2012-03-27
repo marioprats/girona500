@@ -57,6 +57,7 @@ std::vector< float > _setpoints ;
 std::vector< float > _setjoints ;
 
 boost::mutex _setpoints_mutex;
+//boost::mutex _setjoints_mutex;
 boost::shared_ptr< boost::thread > _reading_thread ;
 
 bool _reading_on = false ;
@@ -105,6 +106,16 @@ void readKeyboardHits( ) ;
  * @date 22/05/2011
  */
 void publishSetpoints( ros::Publisher& pub ) ;
+
+
+/**
+ *This function is executed in every loop_rate in the main.
+ *It generates the message to send to the arm controller.
+ *
+ * @author Arnau Carrera
+ * @date 27/03/2012
+ */
+void publishSetjoints( ros::Publisher& pub ) ;
 
 
 /**
@@ -162,6 +173,7 @@ main(int argc, char **argv)
 
 	//Publishers
 	ros::Publisher _pub = n.advertise<sensor_msgs::Joy>("/control_g500/joystick_data", 1);
+	ros::Publisher _pub_Joint = n.advertise<sensor_msgs::JointState>("/control_g500/join_state",1);
 	_pub_ack_teleop = n.advertise<std_msgs::String >("/control_g500/joystick_ack", 1);
 
 	//Subcribers
@@ -176,6 +188,7 @@ main(int argc, char **argv)
 	{
 		ros::spinOnce();
 		publishSetpoints(_pub);
+		publishSetjoints(_pub_Joint);
 		loop_rate.sleep() ;
 	}
 	
@@ -203,7 +216,7 @@ getConfig(){
 
 	if(!ros::param::getCached("joint/min_arm_v", _config.min_arm_v)) {ROS_FATAL("Invalid parameters for joint/min_arm_v in param server!"); ros::shutdown();}
 	if(!ros::param::getCached("joint/max_arm_v", _config.max_arm_v)) {ROS_FATAL("Invalid parameters for joint/max_arm_v in param server!"); ros::shutdown();}
-	if(!ros::param::getCached("joint/arm_inc", _config.inc_arm)) {ROS_FATAL("Invalid parameters for joint/arm_inc in param server!"); ros::shutdown();}
+	if(!ros::param::getCached("joint/arm_inc", _config.inc_arm)) {ROS_FATAL("Invalid parameters for AKI joint/arm_inc in param server!"); ros::shutdown();}
 	if(!ros::param::getCached("joint/min_hand_v", _config.min_hand_v)) {ROS_FATAL("Invalid parameters for joint/min_hand_v in param server!"); ros::shutdown();}
 	if(!ros::param::getCached("joint/max_hand_v", _config.max_hand_v)) {ROS_FATAL("Invalid parameters for joint/max_hand_v in param server!"); ros::shutdown();}
 	if(!ros::param::getCached("joint/hand_inc", _config.inc_hand)) {ROS_FATAL("Invalid parameters for joint/hand_inc in param server!"); ros::shutdown();}
@@ -305,6 +318,7 @@ readKeyboardHits( ) {
 		_pressed_keys.push_back( key ) ;
 
 		boost::mutex::scoped_lock lock( _setpoints_mutex ) ;
+		//boost::mutex::scoped_lock lock( _setjoints_mutex ) ;
 
 		if ( key == KEY_ESC ) {
 
@@ -337,22 +351,22 @@ readKeyboardHits( ) {
 			_setpoints[YAW] -= _config.inc_yaw;
 		}
 		else if ( key == KEY_O || key == KEY_o ) {
-		        _setpoints[ARM] += _config.inc_arm;
+		        _setjoints[ARM] += _config.inc_arm;
 		}
 		else if ( key == KEY_L || key == KEY_l ) {
-		        _setpoints[ARM] -= _config.inc_arm;
+		        _setjoints[ARM] -= _config.inc_arm;
 		}
 		else if ( key == KEY_I || key == KEY_i ) {
-		        _setpoints[HAND] += _config.inc_hand;
+		        _setjoints[HAND] += _config.inc_hand;
 		}
 		else if ( key == KEY_K || key == KEY_k ) {
-		        _setpoints[HAND] -= _config.inc_hand;
+		        _setjoints[HAND] -= _config.inc_hand;
 		}
 		else if ( key == KEY_U || key == KEY_u ) {
-		        _setpoints[SUPPORT] += _config.inc_support;
+		        _setjoints[SUPPORT] += _config.inc_support;
 		}
 		else if ( key == KEY_J || key == KEY_j ) {
-		        _setpoints[SUPPORT] -= _config.inc_support;
+		        _setjoints[SUPPORT] -= _config.inc_support;
 		}
 		else if ( key == KEY_SPACE ) {
 			//std::fill( _setpoints.begin(), _setpoints.end(), 0.0 );
@@ -360,6 +374,10 @@ readKeyboardHits( ) {
 			_setpoints[Y] = 0.0;
 			_setpoints[Z] = 0.0;
 			_setpoints[YAW] = 0.0;
+
+			_setjoints[ARM] = 0.0;
+			_setjoints[HAND] = 0.0;
+			_setjoints[SUPPORT] = 0.0;
 		}
 		else {
 			ROS_INFO( "Keycode is: %d. Ignored Key.", key );
@@ -406,6 +424,27 @@ publishSetpoints( ros::Publisher& pub )
 
 	msg.buttons.reserve(_pressed_keys.size());
 	copy(_pressed_keys.begin(),_pressed_keys.end(),back_inserter(msg.buttons));
+
+	msg.header.stamp = ros::Time::now() ;
+	pub.publish( msg ) ;
+
+	_pressed_keys.clear() ;
+	_pressed_keys.resize(1) ;
+}
+
+
+void
+publishSetjoints( ros::Publisher& pub )
+{
+	boost::mutex::scoped_lock lock( _setpoints_mutex ) ;
+
+	sensor_msgs::JointState msg ;
+
+	msg.position.reserve(_setjoints.size()) ;
+	copy(_setjoints.begin(), _setjoints.end(), back_inserter(msg.position)) ;
+
+	msg.velocity.reserve(_setjoints.size()) ;
+	copy(_setjoints.begin(), _setjoints.end(), back_inserter(msg.velocity)) ;
 
 	msg.header.stamp = ros::Time::now() ;
 	pub.publish( msg ) ;
