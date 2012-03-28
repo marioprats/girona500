@@ -173,13 +173,13 @@ main(int argc, char **argv)
 
 	//Publishers
 	ros::Publisher _pub = n.advertise<sensor_msgs::Joy>("/control_g500/joystick_data", 1);
-	ros::Publisher _pub_Joint = n.advertise<sensor_msgs::JointState>("/control_g500/join_state",1);
+	ros::Publisher _pub_Joint = n.advertise<sensor_msgs::JointState>("/control_g500/joint_state",1);
 	_pub_ack_teleop = n.advertise<std_msgs::String >("/control_g500/joystick_ack", 1);
 
 	//Subcribers
 	ros::Subscriber sub_ok = n.subscribe( "/control_g500/joystick_ok", 1, joystickOkCallback);
 
-    signal(SIGINT, quit);
+	signal(SIGINT, quit);
 
 	ros::Rate loop_rate( 10.0 ) ;
 	_reading_on = true ;
@@ -397,7 +397,7 @@ readKeyboardHits( ) {
 		else if(_setpoints[YAW] < _config.min_yaw_v) _setpoints[YAW] = _config.min_yaw_v;
 
 		//Joint Saturate
-
+		
 		if(_setjoints[ARM] > _config.max_arm_v) _setjoints[ARM] = _config.max_arm_v;
 		else if(_setjoints[ARM] < _config.min_arm_v) _setjoints[ARM] = _config.min_arm_v;
 		 

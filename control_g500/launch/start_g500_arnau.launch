@@ -39,6 +39,9 @@
 	<node name="thruster_allocator" pkg="control_g500" type="thruster_allocator.py"/>
 	<node name="velocity_controller" pkg="control_g500" type="velocity_controller.py"/>
 	<node name="merge_bvr" pkg="control_g500" type="merge_bvr.py"/>
+	<node name="arm_controller_sim" pkg="control_g500" type="arm_controller_sim.py" output="screen"/>
+
+
 
 	<!-- Run Navigation Stack -->
 	<rosparam command="load" file="$(find navigation_g500)/config/localization.yaml" />
