@@ -8,13 +8,14 @@ import rospy
 # Msgs imports
 from auv_msgs.msg import *
 from nav_msgs.msg import Odometry
+from std_srvs.srv import Empty, EmptyResponse, EmptyRequest
 
 # Python imports
-#import pylab
 from numpy import *
 
 # Custom imports
 import cola2_lib
+
 
 class VelocityController :
     def __init__(self, name):
@@ -23,7 +24,8 @@ class VelocityController :
         
         # Load parameters
         self.getConfig()
-    
+        self.enable = self.is_enabled
+        
         # Input data 
         self.v = zeros(6)
         self.desired_velocity = zeros(6)
@@ -40,6 +42,10 @@ class VelocityController :
         rospy.Subscriber("/navigation_g500/nav_sts", NavSts, self.updateNavSts)
         rospy.Subscriber("/control_g500/merged_body_velocity_req", BodyVelocityReq, self.updateResponse)
         
+        #Create services
+        self.enable_srv = rospy.Service('/control_g500/enable_velocity_controller', Empty, self.enableSrv)
+        self.disable_srv = rospy.Service('/control_g500/disable_velocity_controller', Empty, self.disableSrv)
+
 
     def getConfig(self) :
         """ Load parameters from the rosparam server """
@@ -50,8 +56,21 @@ class VelocityController :
         ki = array( rospy.get_param("velocity_controller/pid_velocity_ki") )
         kd = array( rospy.get_param("velocity_controller/pid_velocity_kd") )
         sat = array( rospy.get_param("velocity_controller/pid_velocity_sat") )
+        self.is_enabled = rospy.get_param("velocity_controller/is_enabled")
         self.pid_velocity = cola2_lib.PidConfig(kp, ki, kd, sat)
+    
+    
+    def enableSrv(self, req):
+        self.enable = True
+        rospy.loginfo('%s Enabled', self.name)
+        return EmptyResponse()
+    
         
+    def disableSrv(self, req):
+        self.enable = False
+        rospy.loginfo('%s Disabled', self.name)
+        return EmptyResponse()
+    
     
     def updateOdometry(self, odom):
         self.v[0] = odom.twist.twist.linear.x
@@ -85,49 +104,49 @@ class VelocityController :
          
          
     def iterate(self): 
-    #   Main loop
-        rospy.loginfo("desired_velocity: %s", str(self.desired_velocity))
-        rospy.loginfo("current velocity: %s", str(self.v))
-        
-        # Apply PIDs to obtain tau
-        # Compute real period
-        now = rospy.Time.now()
-        real_period_ = (now - self.past_time) #nano seconds to seconds
-        self.past_time = now
-        rospy.loginfo("real_period: %s", str(real_period_.to_sec()))
-        
-        # Compute TAU velocity
-        tau_velocity = zeros(6)
-        [tau_velocity, self.ek_velocity_1, self.eik_velocity_1]  = cola2_lib.computePid6Dof(self.desired_velocity, self.v, self.pid_velocity.kp, 
-                                                self.pid_velocity.ki, self.pid_velocity.kd, self.pid_velocity.sat,
-                                                self.ek_velocity_1, self.eik_velocity_1, real_period_.to_sec())
-        
-        # Compute TAU and publish it for the navigator
-        tau = (tau_velocity +  self.pid_velocity_feed_forward_force) * self.force_max
-        rospy.loginfo("Tau: %s", str(tau))
-        
-        data = BodyForceReq()
-        data.header.stamp = now
-        data.header.frame_id = "vehicle_frame"
-        data.goal.requester = "/control_g500/velocity_controller"
-        data.goal.id = 0
-        data.goal.priority = 10
-        data.wrench.force.x = tau[0]
-        data.wrench.force.y = tau[1]
-        data.wrench.force.z = tau[2]        
-        data.wrench.torque.x = tau[3]
-        data.wrench.torque.y = tau[4]
-        data.wrench.torque.z = tau[5]
-        
-        data.disable_axis.x = self.resp.disable_axis.x
-        data.disable_axis.y = self.resp.disable_axis.y
-        data.disable_axis.z = self.resp.disable_axis.z
-        data.disable_axis.roll = self.resp.disable_axis.roll
-        data.disable_axis.pitch = self.resp.disable_axis.pitch
-        data.disable_axis.yaw = self.resp.disable_axis.yaw
-        
-        self.pub_tau.publish(data)
-
+        if self.enable:
+            # Main loop
+            rospy.loginfo("desired_velocity: %s", str(self.desired_velocity))
+            rospy.loginfo("current velocity: %s", str(self.v))
+            
+            # Apply PIDs to obtain tau
+            # Compute real period
+            now = rospy.Time.now()
+            real_period_ = (now - self.past_time) #nano seconds to seconds
+            self.past_time = now
+            rospy.loginfo("real_period: %s", str(real_period_.to_sec()))
+            
+            # Compute TAU velocity
+            tau_velocity = zeros(6)
+            [tau_velocity, self.ek_velocity_1, self.eik_velocity_1]  = cola2_lib.computePid6Dof(self.desired_velocity, self.v, self.pid_velocity.kp, 
+                                                    self.pid_velocity.ki, self.pid_velocity.kd, self.pid_velocity.sat,
+                                                    self.ek_velocity_1, self.eik_velocity_1, real_period_.to_sec())
+            
+            # Compute TAU and publish it for the navigator
+            tau = (tau_velocity +  self.pid_velocity_feed_forward_force) * self.force_max
+            rospy.loginfo("Tau: %s", str(tau))
+            
+            data = BodyForceReq()
+            data.header.stamp = now
+            data.header.frame_id = "vehicle_frame"
+            data.goal.requester = "/control_g500/velocity_controller"
+            data.goal.id = 0
+            data.goal.priority = 10
+            data.wrench.force.x = tau[0]
+            data.wrench.force.y = tau[1]
+            data.wrench.force.z = tau[2]        
+            data.wrench.torque.x = tau[3]
+            data.wrench.torque.y = tau[4]
+            data.wrench.torque.z = tau[5]
+            
+            data.disable_axis.x = self.resp.disable_axis.x
+            data.disable_axis.y = self.resp.disable_axis.y
+            data.disable_axis.z = self.resp.disable_axis.z
+            data.disable_axis.roll = self.resp.disable_axis.roll
+            data.disable_axis.pitch = self.resp.disable_axis.pitch
+            data.disable_axis.yaw = self.resp.disable_axis.yaw
+            
+            self.pub_tau.publish(data)
 
 if __name__ == '__main__':
     try:

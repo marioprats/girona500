@@ -13,7 +13,6 @@ from auv_msgs.msg import *
 from navigation_g500.msg import *
 from sensor_msgs.msg import Imu
 from sensor_msgs.msg import Range
-from control_g500.msg import ThrustersData
 
 # More imports
 from numpy import *
@@ -67,8 +66,8 @@ class Dynamics :
             rospy.logfatal("valeport_sound_velocity/tf param not found")        
         
         if rospy.has_param("teledyne_explorer_dvl/tf") :
-            dvl_tf_array = array(rospy.get_param("teledyne_explorer_dvl/tf"))
-            self.dvl_tf = self.computeTf(dvl_tf_array*-1.0) 
+            self.dvl_tf_array = array(rospy.get_param("teledyne_explorer_dvl/tf"))
+            self.dvl_tf = self.computeTf(self.dvl_tf_array*-1.0) 
         else:
             rospy.logfatal("teledyne_explorer_dvl/tf param not found")  
             
@@ -294,6 +293,7 @@ class Dynamics :
         odom = Odometry()
         odom.header.stamp = rospy.Time.now()
         odom.header.frame_id = str(self.frame_id)
+        odom.child_frame_id = "real_girona500"
         
         odom.pose.pose.position.x = self.p[0]
         odom.pose.pose.position.y = self.p[1]
@@ -388,11 +388,24 @@ class Dynamics :
         dvl = TeledyneExplorerDvl()
         dvl.header.stamp = rospy.Time.now()
         dvl.header.frame_id = str(self.frame_id)
-        vx = self.v[0] + random.normal(0.0, self.dvl_velocity_covariance[0])
+        
+        #add noise
+        v_dvl = zeros(3)
+        v_dvl[0] = self.v[0] + random.normal(0.0, self.dvl_velocity_covariance[0])
+        v_dvl[1] = self.v[1] + random.normal(0.0, self.dvl_velocity_covariance[1])
+        v_dvl[2] = self.v[2] + random.normal(0.0, self.dvl_velocity_covariance[2])
+        
+        #velocity is computed add the gravity center but we want the velocity at the sensor
+        #Vdvl = Vg500 + (v.ang.z x dist(dvl->g500))
+        angular_velocity = array([self.v[3], self.v[4], self.v[5]])
+        distance = self.dvl_tf_array[0:3]
+        v_dvl = v_dvl + cross(angular_velocity, distance)
+        
         #The DVL is not dextrogir
-        vy = -self.v[1] + random.normal(0.0, self.dvl_velocity_covariance[1])
-        vz = self.v[2] + random.normal(0.0, self.dvl_velocity_covariance[2])
-        dvl_data = PyKDL.Vector(vx, vy, vz)
+        v_dvl[1] = -v_dvl[1]
+
+        #Rotate the DVL        
+        dvl_data = PyKDL.Vector(v_dvl[0], v_dvl[1], v_dvl[2])
         dvl_data = self.dvl_tf.M * dvl_data
         dvl.bi_x_axis = dvl_data[0]
         dvl.bi_y_axis = dvl_data[1]
@@ -412,6 +425,7 @@ class Dynamics :
             east = self.p[1] + random.normal(0.0, self.gps_position_covariance[1])
             gps.north = north
             gps.east = east
+            gps.data_quality = 1
             self.pub_gps.publish(gps)
         
         
@@ -429,7 +443,7 @@ class Dynamics :
         self.pub_imu = rospy.Publisher('/navigation_g500/imu', Imu)
         self.pub_svs = rospy.Publisher('/navigation_g500/valeport_sound_velocity', ValeportSoundVelocity)
         self.pub_dvl = rospy.Publisher('/navigation_g500/teledyne_explorer_dvl', TeledyneExplorerDvl)
-        self.pub_gps = rospy.Publisher('/navigation_g500/fastrax_it_500', FastraxIt500Gps)
+        self.pub_gps = rospy.Publisher('/navigation_g500/fastrax_it_500_gps', FastraxIt500Gps)
         rospy.init_node('dynamics')
                 
         
