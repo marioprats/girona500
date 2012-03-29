@@ -23,7 +23,7 @@ dynamics/odin/quadratic_damping: [-148.0, -148.0, -148.0, -180.0, -180.0, -180.0
 
 
 #Meters and Rads [X, Y, Z, Roll, Pitch, Yaw]
-dynamics/odin/initial_pose: [3.0, 1.1, 0.0, 0, 0, 3.14] #[3.0, 1.1, 2.8, 0, 0, 3.14]
+dynamics/odin/initial_pose: [1.0, -4.0, 0.0, 0, 0, 1.57] #[3.0, 1.1, 2.8, 0, 0, 3.14]
 dynamics/odin/initial_velocity: [0, 0, 0, 0, 0, 0]
 
 dynamics/odin/topic_name: "/dataNavigator"
@@ -40,7 +40,7 @@ dynamics/current_max: [0.0, 0.0, 0.0]
 # Transformation wrt vehicle frame: [x, y, z, roll, pitch, yaw] (in meters and degrees!!!)
 valeport_sound_velocity/tf: [0.0, 0.0, 0.2, 0.0, 0.0, 0.0]
 tritech_igc_gyro/tf: [0.0, 0.0, 0.0, 0.0, 0.0, 180.0]
-teledyne_explorer_dvl/tf: [0.0, 0.0, 0.0, 0.0, 0.0, 225.0] 
+teledyne_explorer_dvl/tf: [-0.75, 0.0, 0.0, 0.0, 0.0, 225.0] 
 
 # Sensors publication periods
 valeport_sound_velocity/period: 0.2

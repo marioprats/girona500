@@ -14,6 +14,25 @@ from numpy import *
 
 
 class ThrusterAllocator :
+    
+    def __init__(self, name):
+        """ Controls the velocity and pose of an AUV  """
+        self.name = name
+        
+    #   Load parameters
+        self.getConfig()
+    
+    # Input data 
+        self.body_force_req = zeros(6)
+        
+    #   Create publisher
+        self.pub = rospy.Publisher("/control_g500/thrusters_data", ThrustersData)
+      
+    #   Create Subscriber
+    #    rospy.Subscriber("/control_g500/pose_to_force_req", BodyForceReq, self.updateBodyForceReq)
+        rospy.Subscriber("/control_g500/velocity_to_force_req", BodyForceReq, self.updateBodyForceReq)
+                  
+                  
     def loadMatrix(self, name, rows, cols) :
         """ Load a matrix with id 'name' and size (name_rows x name_cols) from a YAML file """
         m = rospy.get_param( name )
@@ -21,7 +40,7 @@ class ThrusterAllocator :
         return matrix(m)
     
     
-    def loadParameters(self) :
+    def getConfig(self) :
         """ Load parameters from the rosparam server """
         self.vehicle_name = rospy.get_param("low_level_controller/vehicle_name")
         self.n_actuators = rospy.get_param("low_level_controller/n_actuators")
@@ -99,58 +118,32 @@ class ThrusterAllocator :
         if not w.disable_axis.yaw : 
             self.body_force_req[5] = w.wrench.torque.z
         
+        rospy.loginfo("Body Force Request: %s", str(self.body_force_req))
         
-    def run(self):
-        """ Controls the velocity and pose of an AUV  """
-    
-    #   Load parameters
-        self.loadParameters()
-    
-    # Input data 
-        self.body_force_req = zeros(6)
+        # Computes the force to be done for each actuator
+        f = self.acm_inv * matrix(self.body_force_req).T
+        f = squeeze(asarray(f)) #matrix to array
+        rospy.loginfo("f: %s", str(f))
         
-    #   Create publisher
-        pub = rospy.Publisher("/control_g500/thrusters_data", ThrustersData)
-      
-    #   Create Subscriber
-        rospy.Subscriber("/control_g500/pose_to_force_req", BodyForceReq, self.updateBodyForceReq)
-        rospy.Subscriber("/control_g500/velocity_to_force_req", BodyForceReq, self.updateBodyForceReq)
+        #Compute thruster setpoints and scale [-1, 1] if saturated 
+        setpoint = self.computeThrusterSetpoint(f, self.apl)
+        rospy.loginfo("thrusters setpoint: %s", str(setpoint))
+        setpoint = self.scaleAndSature(setpoint, 1.0, self.actuator_control_matrix)
+        rospy.loginfo("setpoint after scale & sature: %s", str(setpoint))
         
+        # Log and send computed data
+        thrusters = ThrustersData()
+        thrusters.header.stamp = rospy.Time.now()
+        thrusters.header.frame_id = "vehicle_frame"
+        thrusters.setpoints = setpoint
         
-    #   Init node
-        rospy.init_node('thruster_allocator')
-        r = rospy.Rate(10)
-           
-    #   Main loop
-        while not rospy.is_shutdown():
-            rospy.loginfo("Body Force Request: %s", str(self.body_force_req))
-            
-            # Computes the force to be done for each actuator
-            f = self.acm_inv * matrix(self.body_force_req).T
-            f = squeeze(asarray(f)) #matrix to array
-            rospy.loginfo("f: %s", str(f))
-    
-            #Compute thruster setpoints and scale [-1, 1] if saturated 
-            setpoint = self.computeThrusterSetpoint(f, self.apl)
-            rospy.loginfo("thrusters setpoint: %s", str(setpoint))
-            setpoint = self.scaleAndSature(setpoint, 1.0, self.actuator_control_matrix)
-            rospy.loginfo("setpoint after scale & sature: %s", str(setpoint))
-            
-            # Log and send computed data
-            thrusters = ThrustersData()
-            thrusters.header.stamp = rospy.Time.now()
-            thrusters.header.frame_id = "vehicle_frame"
-            thrusters.setpoints = setpoint
-            
-            #publish
-            pub.publish(thrusters)
-                
-            # Log and Wait
-            r.sleep()
-
+        #publish
+        self.pub.publish(thrusters)
+       
 
 if __name__ == '__main__':
     try:
-        thruster_allocator = ThrusterAllocator()
-        thruster_allocator.run()
+        rospy.init_node('thruster_allocator')
+        thruster_allocator = ThrusterAllocator(rospy.get_name())
+        rospy.spin()
     except rospy.ROSInterruptException: pass

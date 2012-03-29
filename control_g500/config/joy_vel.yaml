@@ -7,8 +7,8 @@ joy/y_inc: 0.03
 joy/min_z_v: -0.20
 joy/max_z_v: 0.20
 joy/z_inc: 0.05
-joy/min_yaw_v: -1.0
-joy/max_yaw_v: 1.0
+joy/min_yaw_v: -0.8
+joy/max_yaw_v: 0.8
 joy/yaw_inc: 0.2
 
 joint/min_arm_v: -2.20
