@@ -13,6 +13,8 @@ from auv_msgs.msg import *
 from navigation_g500.msg import *
 from sensor_msgs.msg import Imu
 from sensor_msgs.msg import Range
+from control_g500.msg import ThrustersData
+
 
 # More imports
 from numpy import *
