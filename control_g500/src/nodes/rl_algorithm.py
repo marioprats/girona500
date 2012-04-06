@@ -38,10 +38,10 @@ class RlAlgorithm(object) :
         self.enable = self.is_enabled
 
 
-    class trials:
+    class Trials:
         def __init__(self,ntrials,nparams):
-            policy = zeros((nparams,ntrials))
-            reward = zeros(policy)
+           self.policy = zeros((nparams,ntrials))
+           self.reward = zeros(ntrials)
 
 
     def getConfig(self) :
@@ -91,7 +91,7 @@ class RlAlgorithm(object) :
             rospy.logfatal(self.name +"/n_trials param not found")
 
         if rospy.has_param(self.name +"/n_steps") :
-            self.n_trials = rospy.get_param(self.name +"/n_steps")
+            self.n_steps = rospy.get_param(self.name +"/n_steps")
         else:
             rospy.logfatal(self.name + "/n_steps param not found")        
 
@@ -104,12 +104,12 @@ class RlAlgorithm(object) :
 #self.force_max = array( rospy.get_param("velocity_controller/force_max"))
 
             
-    def rl_function(self) :
+    def rl_function(self,trials,trial) :
         """ Abstarc Method """
         pass
 
 
-    def returnOfTrial(self) :
+    def returnOfTrial(self,policy,n_steps) :
         """ Abstract Method """
         pass
 
@@ -118,15 +118,14 @@ class RlAlgorithm(object) :
     def rl_main(self): 
         #r = rospy.Rate(10)
                 
-        trials = self.trials(self.n_trials,self.n_params)
+        trials = self.Trials(self.n_trials,self.n_params)
 
         for trial in xrange(self.n_trials): 
             if rospy.is_shutdown() :
                 break
 
-            trials(trial).policy = rl_fucntion(trials,trial)
-            trials(trial).reward = returnOfTrial(trials(trial).policy, self.n_steps)
-#r.sleep()    
+            trials.policy[:,trial] = self.rl_function(trials,trial)
+            trials.reward[trial] = self.returnOfTrial(trials.policy[:,trial], self.n_steps)   
         
         self.doPlots(trials)
     
