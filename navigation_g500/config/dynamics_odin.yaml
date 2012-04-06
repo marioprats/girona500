@@ -55,3 +55,6 @@ valeport_sound_velocity/pressure_covariance: 0.02
 teledyne_explorer_dvl/velocity_covariance: [0.0015, 0.0015, 0.0015] #wrt bottom, wrt water probably bigger!
 gps/position_covariance: [0.00005, 0.00005] #Not computed!!!
 
+
+# Thrusters Enableds
+dynamics/odin/thrusters_enableds : [ 0.0 , 0.0, 0.0, 0.0, 0.0 ]

@@ -119,6 +119,14 @@ class Dynamics :
             self.gps_position_covariance = rospy.get_param('gps/position_covariance')
         else:
             rospy.logfatal("gps/position_covariance param not found")
+
+        #Simulator Thrusters Enableds
+        if rospy.has_param("dynamics/" + self.vehicle_name + "/thrusters_enableds") :
+            self.thrusters_enableds = array(rospy.get_param("dynamics/" + self.vehicle_name + "/thrusters_enableds"))
+        else :
+            rospy.logfatal("dynamics/" + self.vehicle_name + "/thrusters_enableds param not found") ;
+
+
         
         
         
@@ -284,7 +292,7 @@ class Dynamics :
     def thrustersDynamics(self, u):
         y = zeros(size(u))
         for i in range(size(u)):
-            y[i] = (self.period * u[i] + self.thrusters_tau * self.y_1[i]) / (self.period + self.thrusters_tau)
+            y[i] = self.thrusters_enableds[i] * ((self.period * u[i] + self.thrusters_tau * self.y_1[i]) / (self.period + self.thrusters_tau))
             
         self.y_1 = y
         return y
