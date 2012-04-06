@@ -1,0 +1,9 @@
+rl_PoWER/n_params : 2
+rl_PoWER/initial_params : [ 0.0, 0.0 ]
+rl_PoWER/initial_variance : [ 30.0, 30.0 ]
+rl_PoWER/adaptative_variance : 0.0
+rl_PoWER/variance_decay : 0.97
+rl_PoWER/importance_sampling_top_count : 3
+rl_PoWER/n_trials : 1000
+rl_PoWER/n_steps : 200
+rl_PoWER/is_enabled : True
