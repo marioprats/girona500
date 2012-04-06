@@ -2,6 +2,6 @@
 
 	<rosparam command="load" file="$(find control_g500)/config/rl_power.yaml" />
 
-	<node name="rl_PoWER" pkg="control_g500" type="rl_power.py" respawn="false"/>		
+	<node name="rl_PoWER" pkg="control_g500" type="rl_power.py" respawn="false" output="screen"/>		
 
 </launch>
