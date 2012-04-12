@@ -125,7 +125,7 @@ class RlAlgorithm(object) :
                 break
 
             trials.policy[:,trial] = self.rl_function(trials,trial)
-            trials.reward[trial] = self.returnOfTrial(trials.policy[:,trial], self.n_steps)   
+            trials.reward[trial] = self.returnOfTrial(trials.policy[:,trial], self.n_steps) 
         
         self.doPlots(trials)
     
@@ -135,13 +135,3 @@ class RlAlgorithm(object) :
         plt.ylabel('Reward')
         plt.show()
 
-        
-#if __name__ == '__main__':
-#    try:
-#        rospy.init_node('rl_Algorithm')
-
-#        rl_Algorithm = RlAlgorithm(rospy.get_name())
-           
-#        rl_main()
-
-#    except rospy.ROSInterruptException: pass
