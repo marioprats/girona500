@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
-#  This node simulate the controller for the new arm
+#  This node implement the algorithm of PoWER.
+#  It implements the abstract class RlAlgorithm
 #  Created on: 28/03/2012
 #  Author: arnau
 
