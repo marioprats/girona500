@@ -296,7 +296,13 @@ class Localization :
             self.odom.header.stamp = rospy.Time.now()
             self.odom.header.frame_id = "girona500"
             self.odom.child_frame_id = "world"
-                       
+
+        # ALERTA PERILL TALL DE CODI PER FER UNA XAPUSA
+        # ARNAU!!!!
+            if self.gps_data:
+                self.odom.pose.pose.position.x = x[0]
+                self.odom.pose.pose.position.y = x[1]
+
             #Fil Nav status topic
             self.nav.header = self.odom.header
             self.nav.position.north = x[0]
