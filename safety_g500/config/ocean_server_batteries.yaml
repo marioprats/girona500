@@ -1,0 +1,9 @@
+# Serial Port
+ocean_server_batteries/sp_path: "/dev/ttyS7"
+ocean_server_batteries/sp_baud_rate: 19200
+ocean_server_batteries/sp_char_size: 8
+ocean_server_batteries/sp_stop_bits: 1
+ocean_server_batteries/sp_parity: "NONE"
+ocean_server_batteries/sp_flow_control: "NONE"
+ocean_server_batteries/sp_timeout: 1000
+ocean_server_batteries/device_timeout: 6000

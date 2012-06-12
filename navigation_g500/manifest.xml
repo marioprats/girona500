@@ -7,19 +7,19 @@
   <author>narcis</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/navigation_g500</url>
+  <url>http://xt.ufg.edu/wiki/index.php/navigation_g500</url>
   <depend package="std_msgs"/>
+  <depend package="std_srvs"/>
   <depend package="auv_msgs"/>
   <depend package="nav_msgs"/>
   <depend package="geometry_msgs"/>
   <depend package="sensor_msgs"/>
-  <depend package="std_srvs" />
   <depend package="rospy"/>
   <depend package="roscpp"/>
   <depend package="tf"/>
   <depend package="tf_conversions"/>
   <depend package="cola2_lib"/>
-  <depend package="control_g500"/>
+  <depend package="safety_g500"/>
   <depend package="kdl"/>
 </package>
 

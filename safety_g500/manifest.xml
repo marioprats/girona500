@@ -1,0 +1,19 @@
+<package>
+  <description brief="safety_g500">
+
+     safety_g500
+
+  </description>
+  <author>Narcís Palomeras</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://xt.ufg.edu/wiki/index.php/safety_g500</url>
+  <depend package="rospy"/>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="std_srvs"/>
+  <depend package="cola2_lib"/>
+  <depend package="auv_msgs"/>
+</package>
+
+

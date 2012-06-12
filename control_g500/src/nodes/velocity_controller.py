@@ -9,6 +9,7 @@ import rospy
 from auv_msgs.msg import *
 from nav_msgs.msg import Odometry
 from std_srvs.srv import Empty, EmptyResponse, EmptyRequest
+from std_msgs.msg import Float32
 
 # Python imports
 from numpy import *
@@ -36,9 +37,9 @@ class VelocityController :
         
         # Create publisher
         self.pub_tau = rospy.Publisher("/control_g500/velocity_to_force_req", BodyForceReq)
-    
+        
         # Create Subscriber
-#        rospy.Subscriber("/navigation_g500/odometry", Odometry, self.updateOdometry)
+        # rospy.Subscriber("/navigation_g500/odometry", Odometry, self.updateOdometry)
         rospy.Subscriber("/navigation_g500/nav_sts", NavSts, self.updateNavSts)
         rospy.Subscriber("/control_g500/merged_body_velocity_req", BodyVelocityReq, self.updateResponse)
         
@@ -50,14 +51,75 @@ class VelocityController :
     def getConfig(self) :
         """ Load parameters from the rosparam server """
         #TODO: Check that the parameters are in the param server
-        self.force_max = array( rospy.get_param("velocity_controller/force_max"))
-        self.pid_velocity_feed_forward_force = array( rospy.get_param("velocity_controller/pid_velocity_feed_forward_force") )
-        kp = array( rospy.get_param("velocity_controller/pid_velocity_kp") )
-        ki = array( rospy.get_param("velocity_controller/pid_velocity_ki") )
-        kd = array( rospy.get_param("velocity_controller/pid_velocity_kd") )
-        sat = array( rospy.get_param("velocity_controller/pid_velocity_sat") )
-        self.is_enabled = rospy.get_param("velocity_controller/is_enabled")
-        self.pid_velocity = cola2_lib.PidConfig(kp, ki, kd, sat)
+        if rospy.has_param("velocity_controller/force_max") :
+            self.force_max = array( rospy.get_param("velocity_controller/force_max"))
+        else:
+            rospy.logfatal("velocity_controller/force_max param not found")
+
+        if rospy.has_param("velocity_controller/pid_velocity_feed_forward_force") :
+            fff = array( rospy.get_param("velocity_controller/pid_velocity_feed_forward_force") )
+        else:
+            rospy.logfatal("velocity_controller/pid_velocity_feed_forward_force param not found")
+        
+        if rospy.has_param("velocity_controller/pid_velocity_kp") :
+            kp = array(rospy.get_param("velocity_controller/pid_velocity_kp"))
+        else:
+            rospy.logfatal("velocity_controller/pid_velocity_kp param not found")
+
+        if rospy.has_param("velocity_controller/pid_velocity_ti") :
+            ti = array(rospy.get_param("velocity_controller/pid_velocity_ti"))
+        else:
+            rospy.logfatal("velocity_controller/pid_velocity_ti param not found")
+
+        if rospy.has_param("velocity_controller/pid_velocity_td") :
+            td = array(rospy.get_param("velocity_controller/pid_velocity_td"))
+        else:
+            rospy.logfatal("velocity_controller/pid_velocity_td param not found")
+
+        if rospy.has_param("velocity_controller/is_enabled") :
+            self.is_enabled = rospy.get_param("velocity_controller/is_enabled")
+        else:
+            rospy.logfatal("velocity_controller/is_enabled param not found")
+                        
+        self.adjust_poly = []
+
+        if rospy.has_param("velocity_controller/open_loop_adjust_poly_x") :
+            self.adjust_poly.append(rospy.get_param("velocity_controller/open_loop_adjust_poly_x"))
+        else:
+            rospy.logfatal("velocity_controller/open_loop_adjust_poly_x")
+        
+        if rospy.has_param("velocity_controller/open_loop_adjust_poly_y") :
+            self.adjust_poly.append(rospy.get_param("velocity_controller/open_loop_adjust_poly_y"))
+        else:
+            rospy.logfatal("velocity_controller/open_loop_adjust_poly_y")
+        
+        if rospy.has_param("velocity_controller/open_loop_adjust_poly_z") :
+            self.adjust_poly.append(rospy.get_param("velocity_controller/open_loop_adjust_poly_z"))
+        else:
+            rospy.logfatal("velocity_controller/open_loop_adjust_poly_z")
+    
+        if rospy.has_param("velocity_controller/open_loop_adjust_poly_roll") :
+            self.adjust_poly.append(rospy.get_param("velocity_controller/open_loop_adjust_poly_roll"))
+        else:
+            rospy.logfatal("velocity_controller/open_loop_adjust_poly_roll")
+            
+        if rospy.has_param("velocity_controller/open_loop_adjust_poly_pitch") :
+            self.adjust_poly.append(rospy.get_param("velocity_controller/open_loop_adjust_poly_pitch"))
+        else:
+            rospy.logfatal("velocity_controller/open_loop_adjust_poly_pitch")
+            
+        if rospy.has_param("velocity_controller/open_loop_adjust_poly_yaw") :
+            self.adjust_poly.append(rospy.get_param("velocity_controller/open_loop_adjust_poly_yaw"))
+        else:
+            rospy.logfatal("velocity_controller/open_loop_adjust_poly_yaw")
+            
+        rospy.loginfo('%s, Adjust Poly:\n %s', self.name, str(self.adjust_poly))
+        rospy.loginfo('%s, Kp: %s', self.name, str(kp))
+        rospy.loginfo('%s, Ti: %s', self.name, str(ti))
+        rospy.loginfo('%s, Td: %s', self.name, str(td))
+        rospy.loginfo('%s, fff: %s', self.name, str(fff))
+        
+        self.pid = cola2_lib.PID(kp, ti, td, fff)
     
     
     def enableSrv(self, req):
@@ -72,14 +134,13 @@ class VelocityController :
         return EmptyResponse()
     
     
-    def updateOdometry(self, odom):
-        self.v[0] = odom.twist.twist.linear.x
-        self.v[1] = odom.twist.twist.linear.y
-        self.v[2] = odom.twist.twist.linear.z
-        self.v[3] = odom.twist.twist.angular.x
-        self.v[4] = odom.twist.twist.angular.y
-        self.v[5] = odom.twist.twist.angular.z
-    ##    print "v: \n" + str(_v)
+#    def updateOdometry(self, odom):
+#        self.v[0] = odom.twist.twist.linear.x
+#        self.v[1] = odom.twist.twist.linear.y
+#        self.v[2] = odom.twist.twist.linear.z
+#        self.v[3] = odom.twist.twist.angular.x
+#        self.v[4] = odom.twist.twist.angular.y
+#        self.v[5] = odom.twist.twist.angular.z
     
     
     def updateNavSts(self, nav_sts):
@@ -89,8 +150,7 @@ class VelocityController :
         self.v[3] = nav_sts.orientation_rate.roll
         self.v[4] = nav_sts.orientation_rate.pitch
         self.v[5] = nav_sts.orientation_rate.yaw
-     ##   print "v: " + str(around(_v,2))
-    
+        
     
     def updateResponse(self, resp):
         self.desired_velocity[0] = resp.twist.linear.x
@@ -100,7 +160,7 @@ class VelocityController :
         self.desired_velocity[4] = resp.twist.angular.y
         self.desired_velocity[5] = resp.twist.angular.z
         self.resp = resp
-        #print "Received response: \n" + str(_sp)
+        self.iterate()
          
          
     def iterate(self): 
@@ -109,29 +169,40 @@ class VelocityController :
             rospy.loginfo("desired_velocity: %s", str(self.desired_velocity))
             rospy.loginfo("current velocity: %s", str(self.v))
             
-            # Apply PIDs to obtain tau
+            # Apply PID to obtain tau
             # Compute real period
             now = rospy.Time.now()
             real_period_ = (now - self.past_time) #nano seconds to seconds
             self.past_time = now
             rospy.loginfo("real_period: %s", str(real_period_.to_sec()))
             
-            # Compute TAU velocity
-            tau_velocity = zeros(6)
-            [tau_velocity, self.ek_velocity_1, self.eik_velocity_1]  = cola2_lib.computePid6Dof(self.desired_velocity, self.v, self.pid_velocity.kp, 
-                                                    self.pid_velocity.ki, self.pid_velocity.kd, self.pid_velocity.sat,
-                                                    self.ek_velocity_1, self.eik_velocity_1, real_period_.to_sec())
+            # Compute TAU using a PID
+            pid_tau = zeros(6)
             
-            # Compute TAU and publish it for the navigator
-            tau = (tau_velocity +  self.pid_velocity_feed_forward_force) * self.force_max
+            [pid_tau, 
+            self.ek_velocity_1, 
+            self.eik_velocity_1] = self.pid.computePid( self.desired_velocity, 
+                                                        self.v, 
+                                                        self.ek_velocity_1, 
+                                                        self.eik_velocity_1, 
+                                                        real_period_.to_sec())
+            
+            # Compute TAU using an Open Loop Controller
+            open_loop_tau = zeros(6)
+            for i in range(6):
+                open_loop_tau[i] = cola2_lib.polyval(self.adjust_poly[i], self.desired_velocity[i])
+            
+            # Combine open loop TAU and PID TAU
+            tau = cola2_lib.saturateValue(pid_tau + open_loop_tau, 1.0) * self.force_max
+            
             rospy.loginfo("Tau: %s", str(tau))
             
             data = BodyForceReq()
             data.header.stamp = now
             data.header.frame_id = "vehicle_frame"
-            data.goal.requester = "/control_g500/velocity_controller"
+            data.goal.requester = "velocity_controller"
             data.goal.id = 0
-            data.goal.priority = 10
+            data.goal.priority = GoalDescriptor.PRIORITY_NORMAL
             data.wrench.force.x = tau[0]
             data.wrench.force.y = tau[1]
             data.wrench.force.z = tau[2]        
@@ -148,12 +219,11 @@ class VelocityController :
             
             self.pub_tau.publish(data)
 
+
 if __name__ == '__main__':
     try:
         rospy.init_node('velocity_controller')
-        r = rospy.Rate(10)
         velocity_controller = VelocityController(rospy.get_name())
-        while not rospy.is_shutdown():
-            velocity_controller.iterate()
-            r.sleep()
+        rospy.spin()
+
     except rospy.ROSInterruptException: pass

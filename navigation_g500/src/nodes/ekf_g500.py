@@ -8,14 +8,15 @@ from numpy import *
 
 
 class EKFG500 :
-    def __init__(self, q_var, gps_var, dvl_var):
+    def __init__(self, q_var, gps_var, dvl_bottom_var, dvl_water_var):
         self.x = zeros(5)
         self.P = zeros((5, 5))
         self.gps_h = self.gpsH()
         self.gps_r = self.gpsR(gps_var)
         self.gps_v = eye(2)
         self.dvl_h = self.dvlH()
-        self.dvl_r = self.dvlR(dvl_var)
+        self.dvl_bottom_r = self.dvlR(dvl_bottom_var)
+        self.dvl_water_r = self.dvlR(dvl_water_var)
         self.dvl_v = eye(3)
         self.Q = self.computeQ(q_var)
         self.init = False
@@ -131,10 +132,15 @@ class EKFG500 :
 #        print "EKF GPS update"
         
 
-    def dvlUpdate(self, z):
+    def dvlUpdate(self, z, velocity_respect_to = 'bottom'):
         ### dvl update with z = [vx, vy, vy] wrt vehicle frame ###
         innovation = z - dot(self.dvl_h, self._x_)
-        temp_K = dot(dot(self.dvl_h, self._P_), self.dvl_h.T) + dot(dot(self.dvl_v, self.dvl_r), self.dvl_v.T)
+        
+        if velocity_respect_to == 'bottom':
+            temp_K = dot(dot(self.dvl_h, self._P_), self.dvl_h.T) + dot(dot(self.dvl_v, self.dvl_bottom_r), self.dvl_v.T)
+        else:
+            temp_K = dot(dot(self.dvl_h, self._P_), self.dvl_h.T) + dot(dot(self.dvl_v, self.dvl_water_r), self.dvl_v.T)
+            
         temp_K_I = squeeze(asarray(matrix(temp_K).I))
         K = dot(dot(self._P_, self.dvl_h.T), temp_K_I)
         Ki = dot(K, innovation)

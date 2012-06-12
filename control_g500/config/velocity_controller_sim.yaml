@@ -3,14 +3,23 @@
 # - By default, degrees X and Y are velocities while Z and YAW are Positions
 # - The output is sent to the thrusters allocator 
  
-#Per DoF [X, Y, Z, Roll, Pitch, Yaw]
-velocity_controller/force_max: [2.0, 1.0, 2.0, 0.0, 0.0, 2.0]
+# Per DoF [X, Y, Z, Roll, Pitch, Yaw]
+velocity_controller/force_max: [1.0, 1.0, 1.0, 0.0, 0.0, 1.5]
+velocity_controller/is_enabled: true
 
-#Velocity PID per DoF
-velocity_controller/pid_velocity_sat: [1.0, 0.6, 0.6, 0.0, 0.0, 0.0]
-velocity_controller/pid_velocity_feed_forward_force: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-velocity_controller/pid_velocity_kp: [2.5, 1.5, 2.5, 0.0, 0.0, 1.0]
-velocity_controller/pid_velocity_ki: [0.5, 0.0, 0.5, 0.0, 0.0, 0.0]
-velocity_controller/pid_velocity_kd: [1.5, 0.0, 0.5, 0.0, 0.0, 0.0]
+# Velocity PID per DoF
+velocity_controller/pid_velocity_feed_forward_force: [0.0, 0.0, -0.018, 0.0, 0.0, 0.0]
+velocity_controller/pid_velocity_kp: [2.0, 1.5, 3.0, 0.0, 0.0, 4.0]
+velocity_controller/pid_velocity_ti: [8.0, 0.0, 6.0, 0.0, 0.0, 4.0]
+velocity_controller/pid_velocity_td: [0.0, 0.0, 0.2, 0.0, 0.0, 0.0]
 
-velocity_controller/is_enabled: True
+# Open loop controller. It adjust the desired velocity for each Dof using a polynomi. 
+# Ex. [0.1, -1.2, 2.0] => y = 0.1*x^2 -1.2*x + 2.0 
+velocity_controller/open_loop_adjust_poly_x: [1.2, 0.0]
+velocity_controller/open_loop_adjust_poly_y: [1.0, 0.0]
+velocity_controller/open_loop_adjust_poly_z: [0.8, 0.0]
+velocity_controller/open_loop_adjust_poly_roll: [0.0]
+velocity_controller/open_loop_adjust_poly_pitch: [0.0]
+velocity_controller/open_loop_adjust_poly_yaw: [-6.9714, 6.2504, 0.0]  # Real value: [-6.9714, 6.2504, 0.1206]
+
+

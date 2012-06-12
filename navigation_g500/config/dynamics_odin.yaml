@@ -23,7 +23,7 @@ dynamics/odin/quadratic_damping: [-148.0, -148.0, -148.0, -180.0, -180.0, -180.0
 
 
 #Meters and Rads [X, Y, Z, Roll, Pitch, Yaw]
-dynamics/odin/initial_pose: [1.0, -4.0, 0.0, 0, 0, 1.57] #[3.0, 1.1, 2.8, 0, 0, 3.14]
+dynamics/odin/initial_pose: [0.0, 0.0, 0.0, 0, 0, 1.57] #[3.0, 1.1, 2.8, 0, 0, 3.14]
 dynamics/odin/initial_velocity: [0, 0, 0, 0, 0, 0]
 
 dynamics/odin/topic_name: "/dataNavigator"
@@ -44,13 +44,13 @@ teledyne_explorer_dvl/tf: [-0.75, 0.0, 0.0, 0.0, 0.0, 225.0]
 
 # Sensors publication periods
 valeport_sound_velocity/period: 0.2
-tritech_igc_gyro/period: 0.1
-teledyne_explorer_dvl/period: 0.3
+tritech_igc_gyro/period: 0.05
+teledyne_explorer_dvl/period: 0.2
 uwsim/period: 0.1
 gps/period: 1.0
 
 # Sensors covariances
-tritech_igc_gyro/orientation_covariance: [0.002, 0.002, 0.002]
+tritech_igc_gyro/orientation_covariance: [0.00000001, 0.000000001, 0.000000001]
 valeport_sound_velocity/pressure_covariance: 0.02
 teledyne_explorer_dvl/velocity_covariance: [0.0015, 0.0015, 0.0015] #wrt bottom, wrt water probably bigger!
 gps/position_covariance: [0.00005, 0.00005] #Not computed!!!

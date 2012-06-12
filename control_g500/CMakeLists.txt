@@ -21,6 +21,7 @@ rosbuild_genmsg()
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
+
 #To use Eigen
 #find_package(Eigen REQUIRED)
 #include_directories(${EIGEN_INCLUDE_DIRS})
@@ -35,8 +36,16 @@ find_package(Boost REQUIRED system regex)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
+#rosbuild_add_executable(teleoperation_pose src/nodes/teleoperation_pose.cpp)
+#target_link_libraries(teleoperation_pose ${Boost_LIBRARIES})
+rosbuild_add_executable(teleoperation src/nodes/teleoperation.cpp)
+target_link_libraries(teleoperation ${Boost_LIBRARIES})
 
-rosbuild_add_executable(teleoperation_vel src/nodes/teleoperation_vel.cpp)
-target_link_libraries(teleoperation_vel ${Boost_LIBRARIES})
-rosbuild_add_executable(keyboard_vel src/nodes/keyboard_vel.cpp)
+
+#rosbuild_add_executable(ps3_joystick src/nodes/ps3_joystick.cpp)
+#rosbuild_add_executable(wingman_joystick src/nodes/wingman_joystick.cpp)
+
+#rosbuild_add_executable(keyboard_pose src/nodes/keyboard_pose.cpp)
+rosbuild_add_executable(keyboard src/nodes/keyboard.cpp)
+
 

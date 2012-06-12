@@ -1,0 +1,15 @@
+# Pose controller.
+# - Current pose is provided by the Navigator or the Dynamics Node
+# - The setpoint is provided by the Coordinator Node. By default, degrees X and Y are velocities while Z and YAW are Positions
+# - The output is sent to the thrusters allocator 
+ 
+#Per DoF [X, Y, Z, Roll, Pitch, Yaw]
+pose_controller/force_max: [0.0, 0.0, 1.0, 0.0, 0.0, 2.0]
+
+#Pose PID per DoF
+pose_controller/pid_pose_sat: [0.0, 0.0, 0.5, 0.0, 0.0, 0.5]
+pose_controller/pid_pose_feed_forward_force: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+pose_controller/pid_pose_kp: [0.0, 0.0, 1.2, 0.0, 0.0, 2.0]
+pose_controller/pid_pose_ki: [0.0, 0.0, 0.2, 0.0, 0.0, 0.2]
+pose_controller/pid_pose_kd: [0.0, 0.0, 5.0, 0.0, 0.0, 2.0]
+

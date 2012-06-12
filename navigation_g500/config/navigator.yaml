@@ -1,0 +1,14 @@
+# Sensors/Model covariances
+navigator/dvl_bottom_covariance: [0.002, 0.002, 0.002]
+navigator/dvl_water_covariance: [0.02, 0.02, 0.02]
+navigator/gps_covariance: [5.0, 5.0]
+navigator/model_covariance: [0.02, 0.02, 0.02]
+
+#If DVL velocity is bigger than "navigatior/dvl_max_v" in m/s it is discarded (the update is not performed)
+navigator/dvl_max_v: 1.2
+navigator/gps_init_samples: 4
+navigator/check_sensors_period: 2.0
+navigator/dvl_max_period_error: 1.0
+navigator/svs_max_period_error: 1.0
+navigator/imu_max_period_error: 1.0
+navigator/max_init_time: 15.0

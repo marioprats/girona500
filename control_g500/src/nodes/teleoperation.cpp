@@ -10,6 +10,8 @@
 #include "std_msgs/String.h"
 #include "sensor_msgs/Joy.h"
 #include "auv_msgs/BodyVelocityReq.h"
+#include "auv_msgs/GoalDescriptor.h"
+
 
 class Teleoperation{
 
@@ -21,7 +23,8 @@ private:
 	ros::Subscriber _sub_data;
 	ros::Timer _t;
 	unsigned int _seq;
-	bool _joystick_alive; //= true ;
+	bool _joystick_alive; 
+	bool _joystick_init;
 
 
 public:
@@ -31,7 +34,7 @@ public:
 	void init()
 	{
 		_seq = 0;
-
+	
 		//Publishers
 		_pub_body_velocity_req = _n.advertise<auv_msgs::BodyVelocityReq>("/control_g500/body_velocity_req", 1);
 		_pub_check_joystick = _n.advertise<std_msgs::String >("/control_g500/joystick_ok", 1);
@@ -40,6 +43,7 @@ public:
 		_sub_ack = _n.subscribe("/control_g500/joystick_ack", 1, &Teleoperation::joystickAckCallback, this);
 		_sub_data = _n.subscribe("/control_g500/joystick_data", 1, &Teleoperation::joystickDataCallback, this);
 
+		_joystick_init = false;
 		_joystick_alive = true ;
 		_t = _n.createTimer(ros::Duration(1.0), &Teleoperation::checkJoystick, this) ; // 1Hz
 	}
@@ -71,7 +75,7 @@ public:
 		body_velocity_req.header.stamp = ros::Time::now();
 
 		//goal
-		body_velocity_req.goal.priority = 1000;
+		body_velocity_req.goal.priority = auv_msgs::GoalDescriptor::PRIORITY_MANUAL_OVERRIDE;
 		body_velocity_req.goal.requester = "/control_g500/teleoperation";
 				
 		//twist set-point
@@ -92,7 +96,7 @@ public:
 			(body_velocity_req.twist.linear.y == 0.0) &&
 			(body_velocity_req.twist.linear.z == 0.0) &&
 			(body_velocity_req.twist.angular.z == 0.0))
-			body_velocity_req.goal.priority = 1;
+			body_velocity_req.goal.priority = auv_msgs::GoalDescriptor::PRIORITY_LOW;
 		
 		_pub_body_velocity_req.publish(body_velocity_req);
 	}
@@ -110,41 +114,48 @@ public:
 	 */
 	void checkJoystick ( const ros::TimerEvent& e )
 	{
-		if ( _joystick_alive ) {
-			_joystick_alive = false ;
+		if (_joystick_init){
+			if ( _joystick_alive ) {
+				_joystick_alive = false ;
+			}
+			else {
+				ROS_FATAL( "WE HAVE LOST THE Joystick!!!!!!" );
+				auv_msgs::BodyVelocityReq body_velocity_req;
+	
+				//header
+				body_velocity_req.header.stamp = ros::Time::now() ;
+	
+				//goal
+				body_velocity_req.goal.priority = auv_msgs::GoalDescriptor::PRIORITY_LOW;
+				body_velocity_req.goal.requester = "/control_g500/teleoperation" ;
+	
+				//disabled_axis
+				body_velocity_req.disable_axis.x = false;
+				body_velocity_req.disable_axis.y = false;
+				body_velocity_req.disable_axis.z = false;
+				body_velocity_req.disable_axis.roll = true;
+				body_velocity_req.disable_axis.pitch = true;
+				body_velocity_req.disable_axis.yaw = false;
+	
+				//twist set-point
+				body_velocity_req.twist.linear.x = 0.0;
+				body_velocity_req.twist.linear.y = 0.0;
+				body_velocity_req.twist.linear.z = 0.0;
+				body_velocity_req.twist.angular.x = 0.0;
+				body_velocity_req.twist.angular.y = 0.0;
+				body_velocity_req.twist.angular.z = 0.0;
+	
+				_pub_body_velocity_req.publish(body_velocity_req);
+			}
 		}
 		else {
-			ROS_FATAL( "WE HAVE LOST THE Joystick!!!!!!" );
-			auv_msgs::BodyVelocityReq body_velocity_req;
-
-			//header
-			body_velocity_req.header.stamp = ros::Time::now() ;
-
-			//goal
-			body_velocity_req.goal.priority = 1;
-			body_velocity_req.goal.requester = "/control_g500/teleoperation" ;
-
-			//disabled_axis
-			body_velocity_req.disable_axis.x = false;
-			body_velocity_req.disable_axis.y = false;
-			body_velocity_req.disable_axis.z = false;
-			body_velocity_req.disable_axis.roll = true;
-			body_velocity_req.disable_axis.pitch = true;
-			body_velocity_req.disable_axis.yaw = false;
-
-			//twist set-point
-			body_velocity_req.twist.linear.x = 0.0;
-			body_velocity_req.twist.linear.y = 0.0;
-			body_velocity_req.twist.linear.z = 0.0;
-			body_velocity_req.twist.angular.x = 0.0;
-			body_velocity_req.twist.angular.y = 0.0;
-			body_velocity_req.twist.angular.z = 0.0;
-
-			_pub_body_velocity_req.publish(body_velocity_req);
+			ROS_INFO("Waiting for the joystick...");
 		}
+		
 		std_msgs::String msg ;
 		msg.data = boost::lexical_cast<std::string>(_seq) + " ok" ;
 		_pub_check_joystick.publish( msg ) ;
+		
 	}
 
 
@@ -165,7 +176,8 @@ public:
 		iss >> seq ;
 		iss >> msg ;
 		if ( "ack" == msg && seq == _seq+1 ) {
-			_joystick_alive = true ;
+			_joystick_alive = true;
+			_joystick_init = true;
 			++_seq ;
 		}
 	}

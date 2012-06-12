@@ -4,10 +4,10 @@
      cola2_lib
 
   </description>
-  <author>Enric Galceran</author>
+  <author>CIRS</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/cola2_lib</url>
+  <url>http://github/acarrera/girona500/wiki</url>
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="" />

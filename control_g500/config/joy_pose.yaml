@@ -1,0 +1,11 @@
+joy/min_x_v: -0.5
+joy/max_x_v: 0.5
+joy/x_inc: 0.1
+joy/min_y_v: -0.25
+joy/max_y_v: 0.25
+joy/y_inc: 0.05
+joy/min_z_p: 0.0
+joy/max_z_p: 4.0
+joy/z_inc: 0.25
+joy/yaw_inc: 0.262 #aprox. 15º
+

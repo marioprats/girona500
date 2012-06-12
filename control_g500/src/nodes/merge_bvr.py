@@ -14,6 +14,11 @@ from numpy import *
 class MergeBvr :
     
     def updateResponse(self, resp):
+        #Check if the requester has any old message in sp. If there is one, remove it.
+        for m in self.sp:
+            if m.goal.requester == resp.goal.requester:
+                self.sp.remove(m)
+                #print "Remove requester", resp.goal.requester
         self.sp.append(resp)
         #rospy.loginfo("Received response from: %s", resp.goal.requester)
     
@@ -65,7 +70,9 @@ class MergeBvr :
         ret.twist.angular.x = 0.0
         ret.twist.angular.y = 0.0
         ret.twist.angular.z = 0.0
+        ret.goal.priority = GoalDescriptor.PRIORITY_LOW
         
+        print "self.sp: ", len(self.sp)
         if len(sp) == 0 :
             ret.disable_axis.x = False
             ret.disable_axis.y = False
@@ -122,7 +129,13 @@ class MergeBvr :
         merged_response = self.merge(self.sp)
         rospy.loginfo("merge_bvr response: %s, %s, %s %s. Priority: %s", merged_response.twist.linear.x, merged_response.twist.linear.y, merged_response.twist.linear.z, merged_response.twist.angular.z, merged_response.goal.priority)
         self.pub_coordinated.publish(merged_response)
-        self.sp=[]
+        #instead of remove all the messages remove those whose time stamps has expired (> 2 second)
+        now = rospy.Time.now()
+        for m in self.sp:
+            if (now - m.header.stamp).to_sec() > 2.0:
+                self.sp.remove(m)
+                rospy.logerr(" !!!!!!!!!!!  Remove %s", m.goal.requester)
+        #self.sp=[]
         
             
 

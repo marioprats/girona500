@@ -1,0 +1,11 @@
+<launch>
+	<!-- Load Parameters -->
+	<rosparam command="load" file="$(find safety_g500)/config/main_control_g500.yaml" />	
+	<rosparam command="load" file="$(find safety_g500)/config/ocean_server_batteries.yaml" />	
+	<rosparam command="load" file="$(find safety_g500)/config/safety_g500.yaml" />	
+	<node name="serial_node" pkg="rosserial_python" type="serial_node.py" args="/dev/ttyACM0" output="screen"/>
+	<!-- <node name="main_control_g500" pkg="safety_g500" type="main_control_g500.py"/> -->
+	<node name="ocean_server_batteries" pkg="safety_g500" type="ocean_server_batteries" output="screen"/>  
+	<node name="safety_g500" pkg="safety_g500" type="safety_g500.py" output="screen"/>
+</launch>
+
