@@ -20,6 +20,7 @@
   <depend package="tf_conversions"/>
   <depend package="cola2_lib"/>
   <depend package="safety_g500"/>
+  <depend package="underwater_vehicle_dynamics"/>
   <depend package="kdl"/>
 </package>
 

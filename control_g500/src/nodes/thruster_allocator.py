@@ -6,6 +6,7 @@ roslib.load_manifest('control_g500')
 import rospy
 
 # Msgs imports
+from std_msgs.msg import Float64MultiArray
 from control_g500.msg import *
 from auv_msgs.msg import *
 
@@ -25,7 +26,7 @@ class ThrusterAllocator :
         self.getConfig()
         
     #   Create publisher
-        self.pub = rospy.Publisher("/control_g500/thrusters_data", ThrustersData)
+        self.pub = rospy.Publisher("/control_g500/thrusters_data", Float64MultiArray)
       
     #   Create Subscriber
     #    rospy.Subscriber("/control_g500/pose_to_force_req", BodyForceReq, self.updateBodyForceReq)
@@ -155,10 +156,8 @@ class ThrusterAllocator :
         rospy.loginfo("thrusters saturated: %s", str(setpoint))
         
         # Log and send computed data
-        thrusters = ThrustersData()
-        thrusters.header.stamp = rospy.Time.now()
-        thrusters.header.frame_id = "vehicle_frame"
-        thrusters.setpoints = setpoint
+        thrusters = Float64MultiArray()
+        thrusters.data= setpoint
         
         #publish
         self.pub.publish(thrusters)

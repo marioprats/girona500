@@ -2,15 +2,16 @@
 
 # Basic ROS imports
 import roslib 
-roslib.load_manifest('navigation_g500')
+roslib.load_manifest('underwater_vehicle_dynamics')
 import rospy
 import PyKDL
 
 # import msgs
+from std_msgs.msg import Float64MultiArray 
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion
-from auv_msgs.msg import *
-from navigation_g500.msg import *
+#from auv_msgs.msg import *
+from underwater_vehicle_dynamics.msg import *
 from sensor_msgs.msg import Imu
 from sensor_msgs.msg import Range
 
@@ -267,7 +268,7 @@ class Dynamics :
 
     
     def updateThrusters(self, thrusters) :
-        t = array(thrusters.setpoints)
+        t = array(thrusters.data)
         i = nonzero(t > 1.0)
         t[i] = 1.0
         i = nonzero(t < -1.0)
@@ -501,7 +502,7 @@ class Dynamics :
         rospy.Timer(rospy.Duration(self.uwsim_period), self.pubOdometry)
         
     #   Create Subscriber
-        rospy.Subscriber("/control_g500/thrusters_data", ThrustersData, self.updateThrusters)
+        rospy.Subscriber("/control_g500/thrusters_data", Float64MultiArray, self.updateThrusters)
         rospy.Subscriber("/uwsim/g500/range", Range, self.updateAltitude)
         
 

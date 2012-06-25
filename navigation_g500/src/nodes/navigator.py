@@ -16,6 +16,7 @@ from ekf_g500 import EKFG500
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Pose
 from navigation_g500.msg import *
+from underwater_vehicle_dynamics.msg import *
 from sensor_msgs.msg import Imu
 from auv_msgs.msg import NavSts
 from safety_g500.msg import NavSensorsStatus
