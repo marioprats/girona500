@@ -25,6 +25,7 @@ class Dynamics :
     def getConfig(self) :
         """ Load parameters from the rosparam server """
         self.vehicle_name = rospy.get_param('vehicle_name')
+        self.num_actuators = rospy.get_param(self.vehicle_name+"/num_actuators")
         
         self.period = rospy.get_param("dynamics/" + self.vehicle_name + "/period")
         self.mass = rospy.get_param("dynamics/" + self.vehicle_name + "/mass")
@@ -33,7 +34,10 @@ class Dynamics :
         self.radius = rospy.get_param("dynamics/" + self.vehicle_name + "/radius")
         self.ctf = rospy.get_param("dynamics/" + self.vehicle_name + "/ctf")
         self.ctb = rospy.get_param("dynamics/" + self.vehicle_name + "/ctb")
-        self.thrusters_tau = rospy.get_param("dynamics/" + self.vehicle_name + "/thrusters_tau")
+        self.actuators_tau = rospy.get_param("dynamics/" + self.vehicle_name + "/actuators_tau")
+        self.actuators_maxsat= rospy.get_param("dynamics/" + self.vehicle_name + "/actuators_maxsat")
+        self.actuators_minsat = rospy.get_param("dynamics/" + self.vehicle_name + "/actuators_minsat")
+        self.actuators_gain = rospy.get_param("dynamics/" + self.vehicle_name + "/actuators_gain")
         self.dzv = rospy.get_param("dynamics/" + self.vehicle_name + "/dzv")
         self.dv = rospy.get_param("dynamics/" + self.vehicle_name + "/dv")
         self.dh = rospy.get_param("dynamics/" + self.vehicle_name + "/dh")
@@ -41,7 +45,9 @@ class Dynamics :
         self.tensor = array(rospy.get_param("dynamics/" + self.vehicle_name + "/tensor"))
         self.damping = array(rospy.get_param("dynamics/" + self.vehicle_name + "/damping"))
         self.quadratic_damping = array(rospy.get_param("dynamics/" + self.vehicle_name + "/quadratic_damping"))
-        
+      
+	self.am=rospy.get_param("dynamics/"+self.vehicle_name+"/allocation_matrix")
+  
         self.p_0 = array(rospy.get_param("dynamics/" + self.vehicle_name + "/initial_pose"))
         self.v_0 = array(rospy.get_param("dynamics/" + self.vehicle_name + "/initial_velocity"))
         self.topic_name = rospy.get_param("dynamics/" + self.vehicle_name + "/topic_name")
@@ -130,32 +136,16 @@ class Dynamics :
 
 
     def generalizedForce(self, du):
-        # Build the signed (lineal/quadratic) thruster coeficient array
-        # Signed square of each thruster setpoint
-        du = du * abs(du)
-    
+	""" Computes the generalized force as B*u, being B the allocation matrix and u the control input """
         ct = zeros(len(du))
         i1 = nonzero(du >= 0.0)
         i2 = nonzero(du <= 0.0)
         ct[i1] = self.ctf
         ct[i2] = self.ctb
         
-        #Odin Thrusters
-#        b = [ct[0],     0,          ct[2],      0,          0,          0,          0,          0,
-#             0,         -ct[1],     0,          -ct[3],     0,          0,          0,          0,
-#             0,         0,          0,          0,          -ct[4],     -ct[5],     -ct[6],     -ct[7],
-#             cq,        0,          cq,         0,          ct[4]*dv,   0,          -ct[6]*dv,  0,
-#             0,         -cq,        0,          -cq,        0,          -ct[5]*dv,  0,          ct[7]*dv,
-#             ct[0]*dh,  ct[1]*dh,   -ct[2]*dh,  -ct[3]*dh,  -cq,        -cq,        -cq,        -cq]
-        
-        #Garbi/Girona500 Thrusters
-        b = [-ct[0],            -ct[1],             .0,             .0,             .0,
-             .0,                .0,                 .0,             .0,             ct[4],
-             .0,                .0,                 -ct[2],         -ct[3],         .0,
-             .0,                .0,                 .0,             .0,             .0,
-             .0,                .0,                 -ct[2]*self.dv, ct[3]*self.dv,  .0,
-             -ct[0]*self.dh,     ct[1]*self.dh,     .0,             .0,             .0]
-        b = array(b).reshape(6,5)
+	#Evaluates allocation matrix loaded as parameter
+	b=eval(self.am)
+        b=array(b).reshape(6,size(b)/6)
       
         # t = generalized force
         t = dot(b, du)
@@ -198,17 +188,22 @@ class Dynamics :
         return d
 
     def gravity(self):
+	""" Computes the gravity and buoyancy forces. Assumes a sphere model for now """
         #Weight and Flotability
         W = self.mass * self.g # [Kg]
         
         #If the vehicle moves out of the water the flotability decreases
+	#FIXME: Assumes water surface at 0.0. Get this value from uwsim.
         if self.p[2] < 0.0: 
             r = self.radius + self.p[2]
             if r < 0.0:
                 r = 0.0
         else :
             r = self.radius
-            
+
+	#TODO: either set as parameter, since different functions may be desired for different vehicles             
+	#      or define common models and let the user choose one by the name
+	#      Eventually let this part to bullet inside uwsim (HfFluid)
         F = ((4 * math.pi * pow(r,3))/3)*self.density*self.g 
   
         # gravity center position in the robot fixed frame (x',y',z') [m]
@@ -266,14 +261,17 @@ class Dynamics :
         p_dot[3:6] = dot(to, self.v[3:6])
         return p_dot
 
-    
     def updateThrusters(self, thrusters) :
+    	"""Receives the control input, saturates each component to maxsat or minsat, and multiplies each component by the actuator gain"""
         t = array(thrusters.data)
-        i = nonzero(t > 1.0)
-        t[i] = 1.0
-        i = nonzero(t < -1.0)
-        t[i] = -1.0
-        self.u = t*1500.0
+        for i in range(size(t)):
+	   if t[i]>self.actuators_maxsat[i]:
+		t[i]=self.actuators_maxsat[i]
+	   elif t[i]<self.actuators_minsat[i]:
+		t[i]=self.actuators_minsat[i]
+	self.u=t
+        for i in range(size(t)):
+           self.u[i] = self.u[i]*self.actuators_gain[i]
         
         
     def updateAltitude(self, range) :
@@ -284,7 +282,7 @@ class Dynamics :
     def thrustersDynamics(self, u):
         y = zeros(size(u))
         for i in range(size(u)):
-            y[i] = (self.period * u[i] + self.thrusters_tau * self.y_1[i]) / (self.period + self.thrusters_tau)
+            y[i] = (self.period * u[i] + self.actuators_tau[i] * self.y_1[i]) / (self.period + self.actuators_tau[i])
             
         self.y_1 = y
         return y
@@ -294,6 +292,7 @@ class Dynamics :
         odom = Odometry()
         odom.header.stamp = rospy.Time.now()
         odom.header.frame_id = str(self.frame_id)
+	#TODO: find a convention for frame names
         odom.child_frame_id = "real_girona500"
         
         odom.pose.pose.position.x = self.p[0]
@@ -306,7 +305,7 @@ class Dynamics :
         odom.pose.pose.orientation.z = orientation[2]
         odom.pose.pose.orientation.w = orientation[3]
             
-        #Haig de comentar les velocitats sino l'UWSim no va 
+        #Haig de comentar les velocitats sino l'UWSim no va. FIXME
         odom.twist.twist.linear.x = 0.0 #v_[0]
         odom.twist.twist.linear.y = 0.0 #v_[1]
         odom.twist.twist.linear.z = 0.0 #v_[2]
@@ -321,7 +320,7 @@ class Dynamics :
         br.sendTransform((self.p[0], self.p[1], self.p[2]), orientation, 
         odom.header.stamp, odom.header.frame_id, "world")
     
-    
+    #TODO: Do we want NavSts, Odometry, or both?
     def pubNavSts(self):
         nav_sts = NavSts()
         nav_sts.header.stamp = rospy.Time.now()
@@ -351,6 +350,7 @@ class Dynamics :
         return frame
     
                     
+    #TODO: Should we include sensors inside UWSim, and just subscribe from here to those needed?
     def pubImu(self, event):
         imu = Imu()
         imu.header.stamp = rospy.Time.now()
@@ -441,6 +441,7 @@ class Dynamics :
     #   Create publisher
         self.pub_odom = rospy.Publisher(str(self.topic_name), Odometry)
 ##       self.pub_nav_sts = rospy.Publisher('/navigation_g500/nav_sts', NavSts)
+	#TODO: Find a convention for topic names
         self.pub_imu = rospy.Publisher('/navigation_g500/imu', Imu)
         self.pub_svs = rospy.Publisher('/navigation_g500/valeport_sound_velocity', ValeportSoundVelocity)
         self.pub_dvl = rospy.Publisher('/navigation_g500/teledyne_explorer_dvl', TeledyneExplorerDvl)
@@ -467,22 +468,26 @@ class Dynamics :
         yg = self.gravity_center[1]
         zg = self.gravity_center[2]
         
-        Mrb=[m,     0,      0,      0,      m*zg,       -m*yg,
-             0,     m,      0,      -m*zg,  0,          m*xg,
-             0,     0,      m,      m*yg,   -m*xg,      0,
-             0,     -m*zg,  m*yg,   Ixx,    Ixy,        Ixz,
-             m*zg,  0,      -m*xg,  Iyx,    Iyy,        Iyz,
-             -m*yg, m*xg,   0,      Izx,    Izy,        Izz]
+	# Define Mrb in yaml
+        #Mrb=[m,     0,      0,      0,      m*zg,       -m*yg,
+             #0,     m,      0,      -m*zg,  0,          m*xg,
+             #0,     0,      m,      m*yg,   -m*xg,      0,
+             #0,     -m*zg,  m*yg,   Ixx,    Ixy,        Ixz,
+             #m*zg,  0,      -m*xg,  Iyx,    Iyy,        Iyz,
+             #-m*yg, m*xg,   0,      Izx,    Izy,        Izz]
+        Mrb = rospy.get_param("dynamics/" + self.vehicle_name + "/Mrb")
         Mrb = array(Mrb).reshape(6, 6)
              
         # Inertia matrix of the rigid body
         # Added Mass derivative
-        Ma=[m/2,    0,      0,      0,      0,      0,
-            0,      m/2,    0,      0,      0,      0,
-            0,      0,      m/2,    0,      0,      0,
-            0,      0,      0,      0,      0,      0,
-            0,      0,      0,      0,      0,      0,
-            0,      0,      0,      0,      0,      0]
+	# Define Ma in yaml
+        #Ma=[m/2,    0,      0,      0,      0,      0,
+            #0,      m/2,    0,      0,      0,      0,
+            #0,      0,      m/2,    0,      0,      0,
+            #0,      0,      0,      0,      0,      0,
+            #0,      0,      0,      0,      0,      0,
+            #0,      0,      0,      0,      0,      0]
+        Ma = rospy.get_param("dynamics/" + self.vehicle_name + "/Ma")
         Ma = array(Ma).reshape(6, 6) 
         
         self.M = Mrb + Ma    # mass matrix: Mrb + Ma
@@ -492,7 +497,9 @@ class Dynamics :
     #   Init currents
         random.seed()
         self.e_vc = self.current_mean 
-        self.u = array([0.0, 0.0, 0.0, 0.0, 0.0]) # Initial thrusters setpoint
+	#The number of zeros will depend on the number of actuators
+        #self.u = array([0.0, 0.0, 0.0, 0.0, 0.0]) # Initial thrusters setpoint
+        self.u = array(zeros(self.num_actuators)) # Initial thrusters setpoint
 
     #   Init simulated sensor
         rospy.Timer(rospy.Duration(self.imu_period), self.pubImu)
@@ -502,6 +509,7 @@ class Dynamics :
         rospy.Timer(rospy.Duration(self.uwsim_period), self.pubOdometry)
         
     #   Create Subscriber
+	#TODO: set the topic names as parameters
         rospy.Subscriber("/control_g500/thrusters_data", Float64MultiArray, self.updateThrusters)
         rospy.Subscriber("/uwsim/g500/range", Range, self.updateAltitude)
         
