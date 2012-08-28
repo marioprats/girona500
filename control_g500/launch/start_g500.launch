@@ -1,9 +1,9 @@
 <launch>
-	<arg name="enableUWSim" value="true" />
-	<arg name="disableShaders" value="true" />
+	<arg name="enableUWSim" value="false" />
+	<arg name="disableShaders" value="false" />
 	
 	<!-- Load simulation parameters -->
-	<rosparam command="load" file="$(find underwater_vehicle_dynamics)/config/dynamics_odin.yaml" />
+	<rosparam command="load" file="$(find underwater_vehicle_dynamics)/config/dynamics_g500.yaml" />
 	<rosparam command="load" file="$(find control_g500)/config/thruster_allocator_sim.yaml" />
 	<rosparam command="load" file="$(find control_g500)/config/velocity_controller_sim.yaml" />	
 	
